@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <text x="80" y="120" fill="#f8fafc" font-family="Georgia, serif" font-size="64" font-weight="bold">Company Newsletter</text>
+  <text x="80" y="180" fill="#94a3b8" font-family="Arial, sans-serif" font-size="28">Q2 2026 Edition  Internal Use Only</text>
+  <rect x="80" y="220" width="1040" height="4" fill="#38bdf8" opacity="0.6"/>
+  <text x="80" y="300" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="22">This quarter we celebrate INNOVATION, TEAMWORK, and GROWTH.</text>
+  <text x="80" y="360" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="20">Our VISION remains clear: build CULTURE that creates lasting IMPACT.</text>
+  <text x="80" y="420" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="20">Stay AGILE. Earn TRUST. Every sprint counts.</text>
+  <text x="80" y="520" fill="#64748b" font-family="Arial, sans-serif" font-size="16">Hidden answers are woven throughout this edition  look closely.</text>
+  <text x="80" y="800" fill="#475569" font-family="Arial, sans-serif" font-size="14">© 2026 Internal Communications · Max 40 players</text>
+</svg>
