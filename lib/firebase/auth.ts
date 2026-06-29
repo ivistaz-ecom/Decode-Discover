@@ -40,7 +40,16 @@ export async function signInWithNameAndEmail(name: string, email: string) {
     body: JSON.stringify({ name: name.trim(), email: normalizedEmail }),
   });
 
-  const data = (await response.json()) as { token?: string; error?: string };
+  const raw = await response.text();
+  let data: { token?: string; error?: string; code?: string };
+
+  try {
+    data = JSON.parse(raw) as { token?: string; error?: string; code?: string };
+  } catch {
+    throw new Error(
+      "Server error while signing in. If this is a Vercel deployment, add Firebase Admin environment variables and redeploy."
+    );
+  }
 
   if (!response.ok || !data.token) {
     throw new Error(data.error ?? "Authentication failed.");

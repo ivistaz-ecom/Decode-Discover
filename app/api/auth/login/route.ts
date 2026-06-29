@@ -1,14 +1,24 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import { DISALLOWED_EMAIL_MESSAGE, isAllowedEmail } from "@/lib/config/auth";
+import { FIREBASE_ADMIN_MISSING_MESSAGE, isAdminEnvConfigured } from "@/lib/firebase/admin-config";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import {
   AUTH_NOT_CONFIGURED_MESSAGE,
   isAuthNotConfiguredError,
 } from "@/lib/firebase/errors";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
+    if (!isAdminEnvConfigured()) {
+      return NextResponse.json(
+        { error: FIREBASE_ADMIN_MISSING_MESSAGE, code: "server-env-missing" },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -77,7 +87,9 @@ export async function POST(request: Request) {
     const message =
       error instanceof Error && error.message.includes("Firebase Admin")
         ? error.message
-        : "Unable to sign in. Please try again.";
+        : error instanceof Error
+          ? error.message
+          : "Unable to sign in. Please try again.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

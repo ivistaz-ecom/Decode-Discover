@@ -1,32 +1,41 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import {
+  FIREBASE_ADMIN_MISSING_MESSAGE,
+  isAdminEnvConfigured,
+  normalizePrivateKey,
+} from "@/lib/firebase/admin-config";
 
 function getServiceAccount() {
-  const json = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!isAdminEnvConfigured()) {
+    throw new Error(FIREBASE_ADMIN_MISSING_MESSAGE);
+  }
+
+  const json = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
   if (json) {
-    return JSON.parse(json) as {
+    const parsed = JSON.parse(json) as {
       project_id: string;
       client_email: string;
       private_key: string;
     };
-  }
 
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-
-  if (projectId && clientEmail && privateKey) {
     return {
-      project_id: projectId,
-      client_email: clientEmail,
-      private_key: privateKey,
+      project_id: parsed.project_id,
+      client_email: parsed.client_email,
+      private_key: normalizePrivateKey(parsed.private_key),
     };
   }
 
-  throw new Error(
-    "Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY in .env.local."
-  );
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!.trim();
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY!);
+
+  return {
+    project_id: projectId,
+    client_email: clientEmail,
+    private_key: privateKey,
+  };
 }
 
 function getAdminApp(): App {

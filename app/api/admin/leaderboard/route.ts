@@ -4,6 +4,8 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { AuthError, verifyRequestAuth } from "@/lib/firebase/verify-request";
 import type { GameSession, LeaderboardEntry } from "@/types/session";
 
+export const runtime = "nodejs";
+
 export async function GET(request: Request) {
   try {
     const decoded = await verifyRequestAuth(request);

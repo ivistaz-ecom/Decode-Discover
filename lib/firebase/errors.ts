@@ -19,7 +19,9 @@ export function isAuthNotConfiguredError(error: unknown): boolean {
 
   return (
     message.includes("CONFIGURATION_NOT_FOUND") ||
-    message.includes("no configuration corresponding")
+    message.includes("no configuration corresponding") ||
+    message.includes("Firebase Admin credentials are missing") ||
+    message.includes("Firebase Admin is not configured")
   );
 }
 

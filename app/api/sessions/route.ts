@@ -7,6 +7,8 @@ import {
   getWeekSessionStatusAdmin,
 } from "@/lib/firebase/sessions-admin";
 
+export const runtime = "nodejs";
+
 export async function GET(request: Request) {
   try {
     const uid = await verifyRequestUid(request);

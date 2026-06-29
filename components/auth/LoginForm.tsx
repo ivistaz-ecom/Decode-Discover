@@ -28,8 +28,31 @@ export function LoginForm() {
     if (!isFirebaseConfigured()) return;
 
     fetch("/api/auth/status")
-      .then((res) => res.json())
-      .then((data: { configured?: boolean }) => {
+      .then(async (res) => {
+        const raw = await res.text();
+        try {
+          return JSON.parse(raw) as {
+            configured?: boolean;
+            reason?: string;
+            message?: string;
+          };
+        } catch {
+          return { configured: false, reason: "invalid-response" };
+        }
+      })
+      .then((data) => {
+        if (data.configured) {
+          setAuthConfigured(true);
+          return;
+        }
+        if (data.reason === "missing-server-env") {
+          setAuthConfigured(null);
+          setError(
+            data.message ??
+              "Server is missing Firebase Admin credentials on Vercel."
+          );
+          return;
+        }
         setAuthConfigured(data.configured ?? false);
       })
       .catch(() => setAuthConfigured(null));
@@ -97,31 +120,43 @@ export function LoginForm() {
           </p>
         </div>
 
-        {authConfigured === false && (
-          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-            <p className="font-medium">Firebase Authentication needs to be enabled</p>
-            <ol className="mt-2 list-decimal space-y-1 pl-4 text-amber-200/90">
-              <li>
-                Open{" "}
-                <a
-                  href={FIREBASE_AUTH_SETUP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  Firebase Authentication
-                </a>
-              </li>
-              <li>
-                Click <strong>Get started</strong>
-              </li>
-              <li>
-                Under Sign-in method, enable <strong>Email/Password</strong>
-              </li>
-              <li>Refresh this page and try again</li>
-            </ol>
-          </div>
-        )}
+      {authConfigured === false && (
+        <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <p className="font-medium">Firebase Authentication needs to be enabled</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-4 text-amber-200/90">
+            <li>
+              Open{" "}
+              <a
+                href={FIREBASE_AUTH_SETUP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Firebase Authentication
+              </a>
+            </li>
+            <li>
+              Click <strong>Get started</strong>
+            </li>
+            <li>
+              Under Sign-in method, enable <strong>Email/Password</strong>
+            </li>
+            <li>Refresh this page and try again</li>
+          </ol>
+        </div>
+      )}
+
+      {authConfigured === null && (
+        <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <p className="font-medium">Could not verify server configuration</p>
+          <p className="mt-1 text-amber-200/90">
+            The login API may be misconfigured on Vercel. Ensure{" "}
+            <code className="rounded bg-black/20 px-1">FIREBASE_CLIENT_EMAIL</code>{" "}
+            and <code className="rounded bg-black/20 px-1">FIREBASE_PRIVATE_KEY</code>{" "}
+            are set in Vercel Environment Variables, then redeploy.
+          </p>
+        </div>
+      )}
 
         {error && (
           <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

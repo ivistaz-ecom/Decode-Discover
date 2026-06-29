@@ -4,6 +4,8 @@ import { saveGameSessionAdmin } from "@/lib/firebase/sessions-admin";
 import { AuthError, verifyRequestUid } from "@/lib/firebase/verify-request";
 import { getAdminDb } from "@/lib/firebase/admin";
 
+export const runtime = "nodejs";
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
