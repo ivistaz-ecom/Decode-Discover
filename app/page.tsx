@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AppShell } from "@/components/layout/AppShell";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useAuthStore } from "@/stores/useAuthStore";
 
@@ -16,8 +17,8 @@ export default function HomePage() {
   }, [loading, user, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <AppShell className="flex min-h-screen items-center justify-center">
       <LoadingSpinner />
-    </div>
+    </AppShell>
   );
 }

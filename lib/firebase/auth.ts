@@ -11,7 +11,12 @@ import {
   setDoc,
   Timestamp,
 } from "firebase/firestore";
-import { DISALLOWED_EMAIL_MESSAGE, isAllowedEmail } from "@/lib/config/auth";
+import {
+  buildEmailFromNameAndDomain,
+  DISALLOWED_EMAIL_MESSAGE,
+  isAllowedEmail,
+  type EmailDomain,
+} from "@/lib/config/auth";
 import { resetGameStore } from "@/stores/useGameStore";
 import { getFirebaseAuth, getFirebaseDb } from "./client";
 import type { AppUser } from "@/types/user";
@@ -27,8 +32,8 @@ export function subscribeToAuth(callback: (user: User | null) => void) {
   });
 }
 
-export async function signInWithNameAndEmail(name: string, email: string) {
-  const normalizedEmail = email.trim().toLowerCase();
+export async function signInWithNameAndEmail(name: string, domain: EmailDomain) {
+  const normalizedEmail = buildEmailFromNameAndDomain(name, domain);
 
   if (!isAllowedEmail(normalizedEmail)) {
     throw new Error(DISALLOWED_EMAIL_MESSAGE);

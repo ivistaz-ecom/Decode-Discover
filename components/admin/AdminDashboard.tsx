@@ -3,10 +3,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LeaderboardTable } from "@/components/admin/LeaderboardTable";
+import { AppShell } from "@/components/layout/AppShell";
+import { GlassPanel } from "@/components/layout/GlassPanel";
+import { AnimateIn } from "@/components/motion/AnimateIn";
+import { InteractiveButton } from "@/components/motion/InteractiveButton";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { isAdminEmail } from "@/lib/config/admin";
 import { getLeaderboard } from "@/lib/firebase/sessions";
 import { signOutUser } from "@/lib/firebase/auth";
+import {
+  glassButtonClass,
+  glassHeaderClass,
+  glassPrimaryButtonClass,
+  pageSubtitleClass,
+  pageTitleClass,
+} from "@/lib/ui/app-theme";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { LeaderboardEntry } from "@/types/session";
 
@@ -53,51 +64,51 @@ export function AdminDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <AppShell className="flex min-h-screen items-center justify-center">
         <LoadingSpinner label="Loading admin..." />
-      </div>
+      </AppShell>
     );
   }
 
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900 sm:px-6">
+    <AppShell>
+      <AnimateIn as="header" className={`${glassHeaderClass} px-4 py-4 sm:px-6`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold">Admin Leaderboard</h1>
-            <p className="text-sm text-zinc-500">
-              Sorted by score (highest first)
-            </p>
+            <h1 className={pageTitleClass}>Admin Leaderboard</h1>
+            <p className={pageSubtitleClass}>Sorted by score (highest first)</p>
           </div>
           <div className="flex gap-2">
-            <button
+            <InteractiveButton
               type="button"
               onClick={() => router.push("/game")}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+              className={glassButtonClass}
             >
               Back to Game
-            </button>
-            <button
+            </InteractiveButton>
+            <InteractiveButton
               type="button"
               onClick={() => void signOutUser()}
-              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+              className={glassPrimaryButtonClass}
             >
               Sign out
-            </button>
+            </InteractiveButton>
           </div>
         </div>
-      </header>
+      </AnimateIn>
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {error}
           </div>
         )}
-        <LeaderboardTable entries={entries} />
+        <GlassPanel className="p-4 sm:p-6">
+          <LeaderboardTable entries={entries} />
+        </GlassPanel>
       </main>
-    </div>
+    </AppShell>
   );
 }

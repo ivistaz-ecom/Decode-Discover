@@ -1,5 +1,8 @@
 "use client";
 
+import { memo } from "react";
+import { useGameStore } from "@/stores/useGameStore";
+
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -7,17 +10,15 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-interface GameTimerProps {
-  elapsedMs: number;
-}
+export const GameTimer = memo(function GameTimer() {
+  const elapsedMs = useGameStore((s) => s.elapsedMs);
 
-export function GameTimer({ elapsedMs }: GameTimerProps) {
   return (
-    <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-      Time: {formatDuration(elapsedMs)}
+    <div className="rounded-md border border-[#5c5348] bg-[#322e28] px-2.5 py-1 text-center text-[11px] font-medium tabular-nums text-[#e8dfd3] sm:text-xs">
+      {formatDuration(elapsedMs)}
     </div>
   );
-}
+});
 
 export function formatMs(ms: number): string {
   return formatDuration(ms);

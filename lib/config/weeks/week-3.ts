@@ -6,7 +6,7 @@ export const WEEK_3_CONFIG: WeekPuzzleConfig = {
   label: "Week 3",
   imagePath: "/week-3.png",
   seed: 2028,
-  gridSize: 16,
+  gridSize: 10,
   startsAt: null,
   endsAt: null,
   words: [

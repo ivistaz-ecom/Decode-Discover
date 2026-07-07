@@ -21,6 +21,8 @@ export interface GameSession {
   score: number | null;
   submittedAnswers: SubmittedAnswer[];
   foundWordIds: string[];
+  /** Per-user shuffled display order for clues (grid stays the same). */
+  questionOrder?: string[];
 }
 
 export interface LeaderboardEntry {

@@ -3,11 +3,11 @@
 import { create } from "zustand";
 import {
   INTRO_IMAGE_DURATION_MS,
-  POPUP_IMAGE_DURATION_MS,
   getActiveWeek,
   getActiveWeekNumber,
   getWeekConfig,
 } from "@/lib/config/puzzle";
+import { resolveQuestionOrder } from "@/lib/game/question-order";
 import { calculateScore } from "@/lib/game/scoring";
 import {
   cellKey,
@@ -15,6 +15,7 @@ import {
   generateWordSearch,
   getSelectedWord,
   isValidSelection,
+  selectionFromAnchor,
 } from "@/lib/game/word-search";
 import {
   createGameSession,
@@ -144,6 +145,7 @@ interface GameState {
   playStatus: PlayStatus;
   grid: string[][];
   placedWords: PlacedWord[];
+  questionOrder: string[];
   foundWordIds: string[];
   foundCellKeys: Set<string>;
   currentSelection: CellPosition[];
@@ -176,7 +178,8 @@ interface GameState {
   completedAt: number | null;
 
   loading: boolean;
-  saving: boolean;
+  persisting: boolean;
+  submitting: boolean;
   error: string | null;
 
   initSession: (uid: string) => Promise<void>;
@@ -212,6 +215,7 @@ function createInitialState(weekNumber = getActiveWeekNumber()) {
     playStatus: "idle" as PlayStatus,
     grid: puzzle.grid,
     placedWords: puzzle.placedWords,
+    questionOrder: [],
     foundWordIds: [],
     foundCellKeys: new Set<string>(),
     currentSelection: [],
@@ -244,7 +248,8 @@ function createInitialState(weekNumber = getActiveWeekNumber()) {
     completedAt: null,
 
     loading: false,
-    saving: false,
+    persisting: false,
+    submitting: false,
     error: null,
   };
 }
@@ -256,9 +261,17 @@ function applySessionToStore(
 ) {
   const weekNumber = session.weekNumber ?? getActiveWeekNumber();
   const puzzle = loadPuzzleForWeek(weekNumber);
+  const wordIds = puzzle.placedWords.map((word) => word.id);
+  const questionOrder = resolveQuestionOrder(
+    wordIds,
+    session.uid,
+    weekNumber,
+    session.questionOrder
+  );
 
   return {
     ...puzzle,
+    questionOrder,
     ...sessionToStoreFields(id, session, puzzle.placedWords),
     ...extra,
   };
@@ -322,9 +335,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       const activeWeek = getActiveWeekNumber();
       const puzzle = loadPuzzleForWeek(activeWeek);
+      const wordIds = puzzle.placedWords.map((word) => word.id);
+      const questionOrder = resolveQuestionOrder(wordIds, uid, activeWeek);
       const created = await createGameSession(uid);
       set({
         ...puzzle,
+        questionOrder,
         sessionId: created.id,
         uid,
         phase: "intro",
@@ -418,8 +434,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!start || phase !== "playing") return;
       set({ elapsedMs: Date.now() - start });
     }, 1000);
-
-    scheduleAutosave(get);
   },
 
   startSelection: (row, col) => {
@@ -432,14 +446,14 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   extendSelection: (row, col) => {
     const { isDragging, currentSelection, phase } = get();
-    if (!isDragging || phase !== "playing") return;
+    if (!isDragging || phase !== "playing" || currentSelection.length === 0) {
+      return;
+    }
 
-    const last = currentSelection[currentSelection.length - 1];
-    if (last?.row === row && last?.col === col) return;
-
-    const next = [...currentSelection, { row, col }];
-    if (isValidSelection(next)) {
-      set({ currentSelection: next });
+    const start = currentSelection[0];
+    const line = selectionFromAnchor(start, { row, col });
+    if (line) {
+      set({ currentSelection: line });
     }
   },
 
@@ -501,8 +515,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     const now = Date.now();
     const { popupOpenCount, firstPopupOpenedAt } = get();
 
-    if (popupTimer) clearTimeout(popupTimer);
-
     set({
       showImageModal: true,
       popupOpenCount: popupOpenCount + 1,
@@ -510,10 +522,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       firstPopupOpenedAt: firstPopupOpenedAt ?? now,
       lastPopupOpenedAt: now,
     });
-
-    popupTimer = setTimeout(() => {
-      get().closeImageModal();
-    }, POPUP_IMAGE_DURATION_MS);
 
     scheduleAutosave(get);
   },
@@ -559,9 +567,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameStartedAt,
       popupOpenCount,
       playStatus,
+      phase,
+      submitting,
     } = get();
 
-    if (!sessionId || playStatus === "already_played") return;
+    if (
+      !sessionId ||
+      playStatus === "already_played" ||
+      phase === "submitted" ||
+      submitting
+    ) {
+      return;
+    }
+
+    set({ submitting: true });
 
     const now = Date.now();
     const completionTime = gameStartedAt ? now - gameStartedAt : 0;
@@ -586,14 +605,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       elapsedMs: completionTime,
     });
 
-    await get().persistSession();
+    try {
+      await get().persistSession();
+    } finally {
+      set({ submitting: false });
+    }
   },
 
   persistSession: async () => {
     const state = get();
     if (!state.sessionId) return;
 
-    set({ saving: true });
+    set({ persisting: true });
     try {
       await saveGameSession(state.sessionId, {
         uid: state.uid!,
@@ -615,11 +638,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         score: state.score,
         submittedAnswers: state.submittedAnswers,
         foundWordIds: state.foundWordIds,
+        questionOrder: state.questionOrder,
       });
     } catch {
       set({ error: "Failed to save progress." });
     } finally {
-      set({ saving: false });
+      set({ persisting: false });
     }
   },
 

@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { AppShell } from "@/components/layout/AppShell";
+import { accentLabelClass, bodyMutedClass } from "@/lib/ui/app-theme";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { resetGameStore } from "@/stores/useGameStore";
 
@@ -24,14 +26,16 @@ export default function LoginPage() {
   }, [loading, user, router]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-10">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom,_rgba(99,102,241,0.1),_transparent_50%)]"
-        aria-hidden
-      />
-      <div className="relative z-10 w-full max-w-md">
+    <AppShell className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <p className={`mb-5 text-center ${accentLabelClass}`}>
+          Discover &amp; Decode
+        </p>
         <LoginForm />
+        <p className={`mt-6 text-center text-xs ${bodyMutedClass}`}>
+          One puzzle per week · Select your company domain
+        </p>
       </div>
-    </div>
+    </AppShell>
   );
 }

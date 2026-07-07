@@ -4,8 +4,8 @@ export const WEEK_1_CONFIG: WeekPuzzleConfig = {
   weekNumber: 1,
   label: "Week 1",
   imagePath: "/week-1.png",
-  seed: 2026,
-  gridSize: 16,
+  seed: 2025,
+  gridSize: 12,
   // Set exact open/close times when the schedule is confirmed, e.g.:
   // startsAt: "2026-06-24T00:00:00+05:30",
   // endsAt: "2026-06-30T23:59:59+05:30",

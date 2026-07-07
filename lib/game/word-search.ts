@@ -1,14 +1,10 @@
 import type { CellPosition, PlacedWord, PuzzleWord } from "@/types/game";
 
+/** Right, down, and one diagonal — no backward (left/up) placement */
 const DIRECTIONS = [
   { dx: 1, dy: 0 },
-  { dx: -1, dy: 0 },
   { dx: 0, dy: 1 },
-  { dx: 0, dy: -1 },
   { dx: 1, dy: 1 },
-  { dx: -1, dy: -1 },
-  { dx: 1, dy: -1 },
-  { dx: -1, dy: 1 },
 ] as const;
 
 function createSeededRandom(seed: number) {
@@ -137,30 +133,38 @@ export function getSelectedWord(
     .join("");
 }
 
+function isAllowedSelectionDelta(dr: number, dc: number): boolean {
+  if (dr < 0 || dc < 0) return false;
+  if (dr === 0 && dc === 0) return false;
+  if (dr !== 0 && dc !== 0 && dr !== dc) return false;
+  return true;
+}
+
+/** Straight line from anchor to current cell (right, down, or ↘ only). */
+export function selectionFromAnchor(
+  start: CellPosition,
+  end: CellPosition
+): CellPosition[] | null {
+  const dr = end.row - start.row;
+  const dc = end.col - start.col;
+
+  if (dr === 0 && dc === 0) return [start];
+  if (!isAllowedSelectionDelta(dr, dc)) return null;
+
+  const steps = Math.max(dr, dc);
+  return Array.from({ length: steps + 1 }, (_, i) => ({
+    row: start.row + i * (dr === 0 ? 0 : 1),
+    col: start.col + i * (dc === 0 ? 0 : 1),
+  }));
+}
+
 export function isValidSelection(selection: CellPosition[]): boolean {
   if (selection.length < 2) return false;
-
-  const dr = selection[1].row - selection[0].row;
-  const dc = selection[1].col - selection[0].col;
-
-  if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return false;
-  if (dr === 0 && dc === 0) return false;
-
-  const stepR = dr === 0 ? 0 : dr / Math.abs(dr);
-  const stepC = dc === 0 ? 0 : dc / Math.abs(dc);
-
-  for (let i = 1; i < selection.length; i++) {
-    const expectedRow = selection[0].row + stepR * i;
-    const expectedCol = selection[0].col + stepC * i;
-    if (
-      selection[i].row !== expectedRow ||
-      selection[i].col !== expectedCol
-    ) {
-      return false;
-    }
-  }
-
-  return true;
+  const line = selectionFromAnchor(
+    selection[0],
+    selection[selection.length - 1]
+  );
+  return line !== null && positionsMatch(line, selection);
 }
 
 export function findMatchingWord(
@@ -168,15 +172,9 @@ export function findMatchingWord(
   selection: CellPosition[],
   selectedText: string
 ): PlacedWord | null {
-  const reversed = selectedText.split("").reverse().join("");
-
   for (const word of placedWords) {
     const cells = getCellsForWord(word);
-    if (
-      (word.word === selectedText || word.word === reversed) &&
-      (positionsMatch(cells, selection) ||
-        positionsMatch([...cells].reverse(), selection))
-    ) {
+    if (word.word === selectedText && positionsMatch(cells, selection)) {
       return word;
     }
   }
