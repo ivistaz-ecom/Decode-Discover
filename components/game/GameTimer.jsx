@@ -9,7 +9,7 @@ function formatDuration(ms) {
 }
 export const GameTimer = memo(function GameTimer() {
     const elapsedMs = useGameStore((s) => s.elapsedMs);
-    return (<div className="rounded-md border border-[#5c5348] bg-[#322e28] px-2.5 py-1 text-center text-[11px] font-medium tabular-nums text-[#e8dfd3] sm:text-xs">
+    return (<div className="rounded-md border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-center font-display text-[11px] font-semibold tabular-nums text-sky-100 sm:text-xs">
       {formatDuration(elapsedMs)}
     </div>);
 });

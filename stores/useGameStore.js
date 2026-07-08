@@ -1,6 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { INTRO_IMAGE_DURATION_MS, getActiveWeek, getActiveWeekNumber, getWeekConfig, } from "@/lib/config/puzzle";
+import { DEMO_CONFIG, DEMO_INTRO_IMAGE_DURATION_MS } from "@/lib/config/demo";
 import { resolveQuestionOrder } from "@/lib/game/question-order";
 import { calculateScore } from "@/lib/game/scoring";
 import { cellKey, findMatchingWord, generateWordSearch, getSelectedWord, isValidSelection, selectionFromAnchor, } from "@/lib/game/word-search";
@@ -10,14 +11,47 @@ let introTimer = null;
 let popupTimer = null;
 let gameTimerInterval = null;
 let initInFlight = null;
-function loadPuzzleForWeek(weekNumber) {
-    const config = getWeekConfig(weekNumber) ?? getActiveWeek();
+function loadPuzzleFromConfig(config) {
     const { grid, placedWords } = generateWordSearch(config.words, config.gridSize, config.seed);
     return {
         weekNumber: config.weekNumber,
         imagePath: config.imagePath,
         grid,
         placedWords,
+    };
+}
+function loadPuzzleForWeek(weekNumber) {
+    const config = getWeekConfig(weekNumber) ?? getActiveWeek();
+    return loadPuzzleFromConfig(config);
+}
+function createEmptyProgress() {
+    return {
+        foundWordIds: [],
+        foundCellKeys: new Set(),
+        currentSelection: [],
+        isDragging: false,
+        introStartedAt: null,
+        introEndedAt: null,
+        initialImageViewDuration: 0,
+        gameStartedAt: null,
+        elapsedMs: 0,
+        hintUsed: false,
+        hintClickCount: 0,
+        hintFirstClickedAt: null,
+        hintLastClickedAt: null,
+        showHintModal: false,
+        showImageModal: false,
+        popupOpenCount: 0,
+        popupSessions: [],
+        currentPopupOpenedAt: null,
+        totalImageViewTime: 0,
+        firstPopupOpenedAt: null,
+        lastPopupOpenedAt: null,
+        submittedAnswers: [],
+        score: null,
+        completionTime: null,
+        completedAt: null,
+        submitting: false,
     };
 }
 function clearGameTimers() {
@@ -94,8 +128,11 @@ function createInitialState(weekNumber = getActiveWeekNumber()) {
         uid: null,
         weekNumber: puzzle.weekNumber,
         imagePath: puzzle.imagePath,
-        phase: "intro",
+        phase: "howToPlay",
         playStatus: "idle",
+        isDemo: false,
+        savedSessionId: null,
+        introDurationMs: INTRO_IMAGE_DURATION_MS,
         grid: puzzle.grid,
         placedWords: puzzle.placedWords,
         questionOrder: [],
@@ -176,6 +213,9 @@ export const useGameStore = create((set, get) => ({
                     phase,
                     playStatus: "ready",
                     loading: false,
+                    isDemo: false,
+                    savedSessionId: null,
+                    introDurationMs: INTRO_IMAGE_DURATION_MS,
                 }));
                 if (!session.gameStartedAt) {
                     get().startIntro();
@@ -195,11 +235,14 @@ export const useGameStore = create((set, get) => ({
                 questionOrder,
                 sessionId: created.id,
                 uid,
-                phase: "intro",
+                phase: "howToPlay",
                 playStatus: "ready",
                 loading: false,
+                isDemo: false,
+                savedSessionId: created.id,
+                introDurationMs: INTRO_IMAGE_DURATION_MS,
+                ...createEmptyProgress(),
             });
-            get().startIntro();
         }
         catch (error) {
             console.error("initSession failed:", error);
@@ -224,17 +267,69 @@ export const useGameStore = create((set, get) => ({
             initInFlight = null;
         }
     },
-    startIntro: () => {
+    dismissHowToPlay: () => {
+        if (get().isDemo || get().playStatus === "already_played")
+            return;
+        set({ introDurationMs: INTRO_IMAGE_DURATION_MS });
+        get().startIntro();
+    },
+    startDemo: () => {
+        const { uid, sessionId } = get();
+        if (!uid)
+            return;
+        clearGameTimers();
+        const puzzle = loadPuzzleFromConfig(DEMO_CONFIG);
+        const questionOrder = puzzle.placedWords.map((word) => word.id);
+        set({
+            ...puzzle,
+            questionOrder,
+            savedSessionId: sessionId,
+            sessionId: null,
+            isDemo: true,
+            playStatus: "demo",
+            introDurationMs: DEMO_INTRO_IMAGE_DURATION_MS,
+            ...createEmptyProgress(),
+        });
+        get().startIntro(DEMO_INTRO_IMAGE_DURATION_MS);
+    },
+    replayDemo: () => {
+        get().startDemo();
+    },
+    resumeMainGame: () => {
+        const { uid, savedSessionId } = get();
+        if (!uid || !savedSessionId)
+            return;
+        clearGameTimers();
+        const activeWeek = getActiveWeekNumber();
+        const puzzle = loadPuzzleForWeek(activeWeek);
+        const wordIds = puzzle.placedWords.map((word) => word.id);
+        const questionOrder = resolveQuestionOrder(wordIds, uid, activeWeek);
+        set({
+            ...puzzle,
+            questionOrder,
+            sessionId: savedSessionId,
+            isDemo: false,
+            playStatus: "ready",
+            introDurationMs: INTRO_IMAGE_DURATION_MS,
+            phase: "intro",
+            ...createEmptyProgress(),
+        });
+        get().startIntro();
+    },
+    startIntro: (durationMs = INTRO_IMAGE_DURATION_MS) => {
         if (get().playStatus === "already_played")
             return;
         const now = Date.now();
-        set({ introStartedAt: now, phase: "intro" });
+        const introDuration = durationMs ?? get().introDurationMs ?? INTRO_IMAGE_DURATION_MS;
+        set({ introStartedAt: now, phase: "intro", introDurationMs: introDuration });
         if (introTimer)
             clearTimeout(introTimer);
         introTimer = setTimeout(() => {
             get().finishIntro();
-        }, INTRO_IMAGE_DURATION_MS);
-        scheduleAutosave(get);
+        }, introDuration);
+        if (!get().isDemo) {
+            scheduleAutosave(get);
+        }
     },
     skipIntro: () => {
         if (get().playStatus === "already_played")
@@ -250,7 +345,7 @@ export const useGameStore = create((set, get) => ({
         const now = Date.now();
         const duration = introStartedAt
             ? now - introStartedAt
-            : INTRO_IMAGE_DURATION_MS;
+            : get().introDurationMs ?? INTRO_IMAGE_DURATION_MS;
         set({
             phase: "playing",
             introEndedAt: now,
@@ -258,7 +353,9 @@ export const useGameStore = create((set, get) => ({
             totalImageViewTime: get().totalImageViewTime + duration,
         });
         get().startGameTimer();
-        scheduleAutosave(get);
+        if (!get().isDemo) {
+            scheduleAutosave(get);
+        }
     },
     startGameTimer: () => {
         if (get().playStatus === "already_played")
@@ -315,7 +412,9 @@ export const useGameStore = create((set, get) => ({
                 foundCellKeys: newCellKeys,
                 currentSelection: [],
             });
-            scheduleAutosave(get);
+            if (!get().isDemo) {
+                scheduleAutosave(get);
+            }
         }
         else {
             set({ currentSelection: [] });
@@ -348,7 +447,9 @@ export const useGameStore = create((set, get) => ({
             firstPopupOpenedAt: firstPopupOpenedAt ?? now,
             lastPopupOpenedAt: now,
         });
-        scheduleAutosave(get);
+        if (!get().isDemo) {
+            scheduleAutosave(get);
+        }
     },
     closeImageModal: () => {
         const { showImageModal, currentPopupOpenedAt, popupSessions, totalImageViewTime, } = get();
@@ -371,9 +472,42 @@ export const useGameStore = create((set, get) => ({
             popupSessions: [...popupSessions, session],
             totalImageViewTime: totalImageViewTime + duration,
         });
-        scheduleAutosave(get);
+        if (!get().isDemo) {
+            scheduleAutosave(get);
+        }
+    },
+    submitDemoAnswers: async () => {
+        const { placedWords, foundWordIds, gameStartedAt, popupOpenCount, phase, submitting, isDemo, } = get();
+        if (!isDemo || phase === "demoComplete" || submitting) {
+            return;
+        }
+        set({ submitting: true });
+        const now = Date.now();
+        const completionTime = gameStartedAt ? now - gameStartedAt : 0;
+        const submittedAnswers = placedWords.map((word) => ({
+            wordId: word.id,
+            answer: word.word,
+            correct: foundWordIds.includes(word.id),
+        }));
+        const correctAnswers = submittedAnswers.filter((a) => a.correct).length;
+        const score = calculateScore(correctAnswers, popupOpenCount);
+        if (gameTimerInterval)
+            clearInterval(gameTimerInterval);
+        set({
+            phase: "demoComplete",
+            submittedAnswers,
+            score,
+            completionTime,
+            completedAt: now,
+            elapsedMs: completionTime,
+            submitting: false,
+        });
     },
     submitAnswers: async () => {
+        if (get().isDemo) {
+            await get().submitDemoAnswers();
+            return;
+        }
         const { sessionId, placedWords, foundWordIds, gameStartedAt, popupOpenCount, playStatus, phase, submitting, } = get();
         if (!sessionId ||
             playStatus === "already_played" ||
@@ -410,7 +544,7 @@ export const useGameStore = create((set, get) => ({
     },
     persistSession: async () => {
         const state = get();
-        if (!state.sessionId)
+        if (!state.sessionId || state.isDemo)
             return;
         set({ persisting: true });
         try {

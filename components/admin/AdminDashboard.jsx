@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { LeaderboardTable } from "@/components/admin/LeaderboardTable";
 import { AppShell } from "@/components/layout/AppShell";
 import { GlassPanel } from "@/components/layout/GlassPanel";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { InteractiveButton } from "@/components/motion/InteractiveButton";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -13,10 +14,7 @@ import { getLeaderboard } from "@/lib/firebase/sessions";
 import { signOutUser } from "@/lib/firebase/auth";
 import {
   glassButtonClass,
-  glassHeaderClass,
   glassPrimaryButtonClass,
-  pageSubtitleClass,
-  pageTitleClass,
 } from "@/lib/ui/app-theme";
 import { useAuthStore } from "@/stores/useAuthStore";
 
@@ -93,29 +91,30 @@ export function AdminDashboard() {
 
   return (
     <AppShell>
-      <AnimateIn as="header" className={`${glassHeaderClass} px-4 py-4 sm:px-6`}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <div>
-            <h1 className={pageTitleClass}>Admin Leaderboard</h1>
-            <p className={pageSubtitleClass}>{subtitle}</p>
-          </div>
-          <div className="flex gap-2">
-            <InteractiveButton
-              type="button"
-              onClick={() => router.push("/game")}
-              className={glassButtonClass}
-            >
-              Back to Game
-            </InteractiveButton>
-            <InteractiveButton
-              type="button"
-              onClick={() => void signOutUser()}
-              className={glassPrimaryButtonClass}
-            >
-              Sign out
-            </InteractiveButton>
-          </div>
-        </div>
+      <AnimateIn>
+        <PageHeader
+          eyebrow="Admin"
+          title="Leaderboard"
+          subtitle={subtitle}
+          actions={
+            <>
+              <InteractiveButton
+                type="button"
+                onClick={() => router.push("/game")}
+                className={glassButtonClass}
+              >
+                Back to Game
+              </InteractiveButton>
+              <InteractiveButton
+                type="button"
+                onClick={() => void signOutUser()}
+                className={glassPrimaryButtonClass}
+              >
+                Sign out
+              </InteractiveButton>
+            </>
+          }
+        />
       </AnimateIn>
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">

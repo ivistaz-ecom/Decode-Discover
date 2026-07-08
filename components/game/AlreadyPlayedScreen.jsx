@@ -1,28 +1,34 @@
 "use client";
 import { AppShell } from "@/components/layout/AppShell";
 import { GlassPanel } from "@/components/layout/GlassPanel";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { InteractiveButton } from "@/components/motion/InteractiveButton";
 import { useWeekPuzzle } from "@/hooks/useWeekPuzzle";
 import { ALREADY_PLAYED_MESSAGE } from "@/lib/config/tournament";
 import { signOutUser } from "@/lib/firebase/auth";
-import { bodyMutedClass, glassButtonClass, glassHeaderClass, pageSubtitleClass, pageTitleClass, } from "@/lib/ui/app-theme";
+import { bodyMutedClass, glassButtonClass } from "@/lib/ui/app-theme";
 import { useGameStore } from "@/stores/useGameStore";
 export function AlreadyPlayedScreen() {
     const { label, words } = useWeekPuzzle();
     const foundWordIds = useGameStore((s) => s.foundWordIds);
     const correctCount = foundWordIds.length;
     return (<AppShell>
-      <AnimateIn as="header" className={`${glassHeaderClass} px-4 py-5 sm:px-6`}>
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4">
-          <div>
-            <h1 className={pageTitleClass}>{label}</h1>
-            <p className={pageSubtitleClass}>Discover &amp; Decode</p>
-          </div>
-          <InteractiveButton type="button" onClick={() => void signOutUser()} className={glassButtonClass}>
-            Sign out
-          </InteractiveButton>
-        </div>
+      <AnimateIn>
+        <PageHeader
+          title={label}
+          subtitle="Discover & Decode"
+          maxWidthClass="max-w-2xl"
+          actions={
+            <InteractiveButton
+              type="button"
+              onClick={() => void signOutUser()}
+              className={glassButtonClass}
+            >
+              Sign out
+            </InteractiveButton>
+          }
+        />
       </AnimateIn>
 
       <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">

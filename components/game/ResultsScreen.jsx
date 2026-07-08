@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { formatMs } from "@/components/game/GameTimer";
 import { AppShell } from "@/components/layout/AppShell";
 import { GlassPanel } from "@/components/layout/GlassPanel";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { InteractiveButton } from "@/components/motion/InteractiveButton";
 import { StaggerGroup } from "@/components/motion/StaggerGroup";
@@ -12,13 +13,13 @@ import { getWeekLabel } from "@/lib/config/weeks";
 import { getCompletionCopy } from "@/lib/game/completion-message";
 import { signOutUser } from "@/lib/firebase/auth";
 import { getGameSessionById } from "@/lib/firebase/sessions";
-import { accentHeadlineClass, bodyMutedClass, glassButtonClass, glassHeaderClass, glassPrimaryButtonClass, pageSubtitleClass, pageTitleClass, } from "@/lib/ui/app-theme";
+import { accentHeadlineClass, bodyMutedClass, glassButtonClass, glassPrimaryButtonClass, } from "@/lib/ui/app-theme";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useGameStore } from "@/stores/useGameStore";
 function StatRow({ label, value }) {
-    return (<div data-stagger className="flex items-center justify-between border-b border-[#4a4238] py-[18px] last:border-0">
-      <span className="text-base text-[#9c9185]">{label}</span>
-      <span className="text-xl font-bold tabular-nums text-[#f4efe6] sm:text-2xl">
+    return (<div data-stagger className="flex items-center justify-between border-b border-white/10 py-[18px] last:border-0">
+      <span className="text-base text-slate-400">{label}</span>
+      <span className="text-xl font-bold tabular-nums text-slate-100 sm:text-2xl">
         {value}
       </span>
     </div>);
@@ -131,37 +132,39 @@ export function ResultsScreen() {
     const weekLabel = getWeekLabel(session.weekNumber ?? 1);
     const copy = getCompletionCopy(correctCount, totalWords, session.weekNumber ?? 1, session.score ?? 0);
     return (<AppShell>
-      <AnimateIn as="header" className={`${glassHeaderClass} px-4 py-5 sm:px-6`}>
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
-          <div>
-            <h1 className={pageTitleClass}>Game Complete</h1>
-            <p className={pageSubtitleClass}>{weekLabel} — Discover &amp; Decode</p>
-          </div>
-          <InteractiveButton type="button" onClick={() => void signOutUser()} className={glassButtonClass}>
-            Sign out
-          </InteractiveButton>
-        </div>
+      <AnimateIn>
+        <PageHeader
+          title="Game Complete 🎉"
+          subtitle={`${weekLabel} — Discover & Decode`}
+          maxWidthClass="max-w-4xl"
+          actions={
+            <InteractiveButton
+              type="button"
+              onClick={() => void signOutUser()}
+              className={glassButtonClass}
+            >
+              Sign out
+            </InteractiveButton>
+          }
+        />
       </AnimateIn>
 
       <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
         <AnimateIn delay={0.1}>
-          <GlassPanel className="p-9 sm:p-12">
-            <StaggerGroup className="divide-y divide-[#4a4238]" delay={0.2} stagger={0.08}>
+          <GlassPanel className="p-8 sm:p-10">
+            <StaggerGroup className="divide-y divide-white/10" delay={0.2} stagger={0.08}>
               <StatRow label="Words found" value={totalWords > 0 ? `${correctCount} / ${totalWords}` : correctCount}/>
               <StatRow label="Time consumed" value={formatMs(session.completionTime ?? 0)}/>
             </StaggerGroup>
-          </GlassPanel>
-        </AnimateIn>
-
-        <AnimateIn delay={0.35}>
-          <GlassPanel className="mt-6 p-6 text-center sm:p-8">
-            <p className={accentHeadlineClass}>{copy.headline}</p>
-            <p className="mt-4 text-base leading-relaxed text-[#d4cdc3]">
-              {copy.encouragement}
-            </p>
-            <p className={`mt-5 leading-relaxed ${bodyMutedClass}`}>
-              {copy.weeklyReminder}
-            </p>
+            <div className="mt-7 border-t border-white/10 pt-7 text-center">
+              <p className={accentHeadlineClass}>{copy.headline}</p>
+              <p className="mt-4 text-base leading-relaxed text-slate-200/90">
+                {copy.encouragement}
+              </p>
+              <p className={`mt-5 leading-relaxed ${bodyMutedClass}`}>
+                {copy.weeklyReminder}
+              </p>
+            </div>
           </GlassPanel>
         </AnimateIn>
       </main>

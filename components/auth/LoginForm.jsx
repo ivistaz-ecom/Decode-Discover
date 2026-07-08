@@ -4,13 +4,14 @@ import Image from "next/image";
 import { signInWithNameAndEmail } from "@/lib/firebase/auth";
 import { isFirebaseConfigured } from "@/lib/firebase/client";
 import { AUTH_NOT_CONFIGURED_MESSAGE } from "@/lib/firebase/errors";
-import { ALLOWED_EMAIL_DOMAINS, buildEmailFromNameAndDomain, } from "@/lib/config/auth";
-import { accentLabelClass, bodyMutedClass, glassPrimaryButtonClass, inputClass, } from "@/lib/ui/app-theme";
+import { ALLOWED_EMAIL_DOMAINS, buildEmailFromUsernameAndDomain, validateEmailUsernameInput, } from "@/lib/config/auth";
+import { accentLabelClass, bodyMutedClass, glassHeaderClass, glassPanelClass, glassPrimaryButtonClass, inputClass, } from "@/lib/ui/app-theme";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 const FIREBASE_AUTH_SETUP_URL = "https://console.firebase.google.com/project/decode-discover/authentication";
 const GAME_LOGO_PATH = "/game-logo.png";
 export function LoginForm() {
     const [name, setName] = useState("");
+    const [emailUsername, setEmailUsername] = useState("");
     const [domain, setDomain] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -61,11 +62,18 @@ export function LoginForm() {
         <code>.env.local</code> and add your Firebase credentials.
       </div>);
     }
-    const previewEmail = domain && name.trim().length > 0
-        ? buildEmailFromNameAndDomain(name, domain)
-        : domain
-            ? `your.name@${domain}`
-            : null;
+    const previewEmail = (() => {
+        if (!domain) return null;
+        if (!emailUsername.trim()) return `username@${domain}`;
+        try {
+            return buildEmailFromUsernameAndDomain(emailUsername, domain);
+        } catch {
+            return null;
+        }
+    })();
+    const emailUsernameError = emailUsername.trim()
+        ? validateEmailUsernameInput(emailUsername)
+        : null;
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -75,13 +83,24 @@ export function LoginForm() {
             setLoading(false);
             return;
         }
+        if (!emailUsername.trim()) {
+            setError("Please enter your email username.");
+            setLoading(false);
+            return;
+        }
+        const usernameValidationError = validateEmailUsernameInput(emailUsername);
+        if (usernameValidationError) {
+            setError(usernameValidationError);
+            setLoading(false);
+            return;
+        }
         if (!domain) {
-            setError("Please select your company email.");
+            setError("Please select your email domain.");
             setLoading(false);
             return;
         }
         try {
-            await signInWithNameAndEmail(name, domain);
+            await signInWithNameAndEmail(name, emailUsername, domain);
         }
         catch (err) {
             setError(err instanceof Error ? err.message : "Authentication failed.");
@@ -91,19 +110,19 @@ export function LoginForm() {
         }
     };
     return (<div className="relative w-full max-w-md">
-      <div className="relative overflow-hidden rounded-xl border border-[#4a4238] bg-[#2a2621] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-        <div className="relative w-full overflow-hidden border-b border-[#4a4238] bg-[#252019]">
+      <div className={`relative overflow-hidden ${glassPanelClass}`}>
+        <div className={`relative w-full overflow-hidden ${glassHeaderClass}`}>
           <Image src={GAME_LOGO_PATH} alt="Decode & Discover" width={640} height={360} priority className="relative z-10 h-auto w-full object-contain" sizes="(max-width: 448px) 100vw, 448px"/>
         </div>
 
         <div className="px-6 py-7 sm:px-8">
           <div className="mb-6 text-center">
             <p className={accentLabelClass}>Internal challenge</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#f4efe6]">
+            <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-50">
               Sign in to play
             </h1>
             <p className={`mt-2 ${bodyMutedClass}`}>
-              Enter your name and select your company
+              Enter your name and company email
             </p>
           </div>
 
@@ -144,28 +163,54 @@ export function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="login-name" className="block text-xs font-medium uppercase tracking-wide text-[#9c9185]">
+              <label htmlFor="login-name" className="block text-xs font-medium uppercase tracking-wide text-slate-400">
                 Name
               </label>
               <input id="login-name" type="text" placeholder="Your full name" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" className={inputClass}/>
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="login-domain" className="block text-xs font-medium uppercase tracking-wide text-[#9c9185]">
-                Company email
+              <label htmlFor="login-email-username" className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+                Email
               </label>
-              <select id="login-domain" value={domain} onChange={(e) => setDomain(e.target.value)} required className={inputClass}>
-                <option value="" disabled>
-                  Select your email
-                </option>
-                {ALLOWED_EMAIL_DOMAINS.map((d) => (<option key={d} value={d}>
-                    @{d}
-                  </option>))}
-              </select>
-              {previewEmail && (<p className="text-xs text-[#6b6358]">
+              <div className="flex items-stretch gap-2">
+                <input
+                  id="login-email-username"
+                  type="text"
+                  placeholder="username"
+                  value={emailUsername}
+                  onChange={(e) => setEmailUsername(e.target.value)}
+                  required
+                  autoComplete="username"
+                  className={`${inputClass} min-w-0 flex-1`}
+                />
+                <span className="flex items-center text-slate-400">@</span>
+                <select
+                  id="login-domain"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  required
+                  className={`${inputClass} min-w-0 flex-1`}
+                >
+                  <option value="" disabled>
+                    Select domain
+                  </option>
+                  {ALLOWED_EMAIL_DOMAINS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {emailUsernameError && (
+                <p className="text-xs text-red-300">{emailUsernameError}</p>
+              )}
+              {previewEmail && !emailUsernameError && (
+                <p className="text-xs text-slate-400">
                   You will sign in as{" "}
-                  <span className="font-mono text-[#a89f94]">{previewEmail}</span>
-                </p>)}
+                  <span className="font-mono text-slate-200">{previewEmail}</span>
+                </p>
+              )}
             </div>
 
             <button type="submit" disabled={loading} className={`mt-2 w-full rounded-lg px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${glassPrimaryButtonClass}`}>

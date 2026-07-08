@@ -22,8 +22,11 @@ export default function LoginPage() {
     }, [loading, user, router]);
     return (<AppShell className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <p className={`mb-5 text-center ${accentLabelClass}`}>
+        <p className={`mb-5 text-center font-display text-lg font-bold tracking-tight text-slate-100 sm:text-xl`}>
           Discover &amp; Decode
+        </p>
+        <p className={`-mt-3 mb-5 text-center ${accentLabelClass}`}>
+          Internal puzzle challenge
         </p>
         <LoginForm />
         <p className={`mt-6 text-center text-xs ${bodyMutedClass}`}>
