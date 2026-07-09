@@ -176,18 +176,20 @@ export function GameScreen() {
           </div>
         </AnimateIn>)}
 
-      <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 gap-3 px-3 py-2">
-        <GlassPanel className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-3 sm:p-4">
-          <div className="aspect-square w-[84%] max-h-[84%] min-h-0 min-w-0">
+      <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-3 px-3 py-2 lg:flex-row">
+        <GlassPanel className="flex shrink-0 items-center justify-center p-2 sm:p-4 lg:min-h-0 lg:min-w-0 lg:flex-1">
+          <div className="aspect-square w-full max-w-[min(100%,calc(100dvh-14rem))] min-h-0 min-w-0 lg:w-[84%] lg:max-h-[84%] lg:max-w-none">
             <WordSearchGrid />
           </div>
         </GlassPanel>
 
-        <GlassPanel className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-3.5">
+        <GlassPanel className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-3.5 lg:min-h-0">
           <p className="mb-2 shrink-0 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Clues
           </p>
-          <QuestionList />
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <QuestionList />
+          </div>
           <GameActionBar onSubmit={() => void handleSubmit()}/>
         </GlassPanel>
       </main>

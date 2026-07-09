@@ -7,15 +7,15 @@ export function QuestionList() {
     const orderedWords = questionOrder
         .map((id) => placedWords.find((word) => word.id === id))
         .filter((word) => Boolean(word));
-    return (<ol className="flex min-h-0 flex-1 flex-col gap-1 py-1">
+    return (<ol className="flex flex-col gap-2.5 py-1">
       {orderedWords.map((word, index) => {
             const found = foundWordIds.includes(word.id);
-            return (<li key={word.id} className="flex min-h-0 flex-1 items-start leading-snug">
-            <span className="shrink-0 pr-1.5 text-[clamp(0.875rem,2vh,1.125rem)] font-semibold text-[#c9a86c]">
+            return (<li key={word.id} className="flex items-start gap-1.5">
+            <span className="shrink-0 text-sm font-semibold text-[#c9a86c] sm:text-base">
               {index + 1}.
             </span>
             <span className={[
-                    "text-[clamp(0.875rem,2vh,1.125rem)] leading-snug sm:leading-normal",
+                    "text-sm leading-snug sm:text-base sm:leading-normal",
                     found ? "text-[#7cb69a]" : "text-[#e8dfd3]",
                 ].join(" ")}>
               {word.clue}

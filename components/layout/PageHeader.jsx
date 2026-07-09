@@ -23,7 +23,7 @@ export function PageHeader({
       />
 
       <div
-        className={`relative mx-auto flex items-center justify-between gap-4 ${maxWidthClass}`}
+        className={`relative mx-auto flex items-center justify-between gap-2 sm:gap-4 ${maxWidthClass}`}
       >
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <div

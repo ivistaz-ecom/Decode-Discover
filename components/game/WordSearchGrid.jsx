@@ -66,7 +66,7 @@ export function WordSearchGrid() {
             const isSelected = selectedKeys.has(key);
             return (<button key={key} type="button" data-row={rowIndex} data-col={colIndex} disabled={disabled} className={[
                     "flex h-full w-full min-h-0 min-w-0 items-center justify-center rounded-[3px] border font-bold leading-none",
-                    "text-[clamp(0.55rem,2vmin,0.85rem)]",
+                    "text-[clamp(0.65rem,3.2vmin,0.9rem)]",
                     isFound
                         ? "border-[#5a8f7b]/60 bg-[#5a8f7b] text-white"
                         : isSelected
