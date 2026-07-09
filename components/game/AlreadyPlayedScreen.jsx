@@ -6,13 +6,16 @@ import { AnimateIn } from "@/components/motion/AnimateIn";
 import { InteractiveButton } from "@/components/motion/InteractiveButton";
 import { useWeekPuzzle } from "@/hooks/useWeekPuzzle";
 import { ALREADY_PLAYED_MESSAGE } from "@/lib/config/tournament";
+import { getComebackMessage } from "@/lib/game/completion-message";
 import { signOutUser } from "@/lib/firebase/auth";
 import { bodyMutedClass, glassButtonClass } from "@/lib/ui/app-theme";
 import { useGameStore } from "@/stores/useGameStore";
 export function AlreadyPlayedScreen() {
     const { label, words } = useWeekPuzzle();
+    const weekNumber = useGameStore((s) => s.weekNumber);
     const foundWordIds = useGameStore((s) => s.foundWordIds);
     const correctCount = foundWordIds.length;
+    const comebackMessage = getComebackMessage(weekNumber ?? 1);
     return (<AppShell>
       <AnimateIn>
         <PageHeader
@@ -42,15 +45,18 @@ export function AlreadyPlayedScreen() {
         <AnimateIn delay={0.2}>
           <GlassPanel className="mt-6 p-6 text-center">
             <p className={`text-sm font-medium ${bodyMutedClass}`}>Submission recorded</p>
-            <p className="mt-2 text-lg font-semibold text-[#f4efe6]">
+            <p className="mt-2 text-lg font-semibold text-slate-100">
               You&apos;ve already completed this week&apos;s puzzle.
             </p>
             <p className={`mt-3 leading-relaxed ${bodyMutedClass}`}>
               Scores are kept private and will be shared by the organizers later.
             </p>
-            <p className="mt-6 text-sm text-[#d4cdc3]">
+            <div className="mt-5 rounded-xl border border-sky-400/25 bg-sky-500/10 px-4 py-3.5 text-sm leading-relaxed text-sky-100">
+              {comebackMessage}
+            </div>
+            <p className="mt-6 text-sm text-slate-300">
               Words found:{" "}
-              <span className="font-semibold text-[#f4efe6]">
+              <span className="font-semibold text-slate-100">
                 {correctCount} / {words.length}
               </span>
             </p>

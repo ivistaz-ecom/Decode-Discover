@@ -13,7 +13,7 @@ import { getWeekLabel } from "@/lib/config/weeks";
 import { getCompletionCopy } from "@/lib/game/completion-message";
 import { signOutUser } from "@/lib/firebase/auth";
 import { getGameSessionById } from "@/lib/firebase/sessions";
-import { accentHeadlineClass, bodyMutedClass, glassButtonClass, glassPrimaryButtonClass, } from "@/lib/ui/app-theme";
+import { accentHeadlineClass, glassButtonClass, glassPrimaryButtonClass, } from "@/lib/ui/app-theme";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useGameStore } from "@/stores/useGameStore";
 function StatRow({ label, value }) {
@@ -161,9 +161,9 @@ export function ResultsScreen() {
               <p className="mt-4 text-base leading-relaxed text-slate-200/90">
                 {copy.encouragement}
               </p>
-              <p className={`mt-5 leading-relaxed ${bodyMutedClass}`}>
+              <div className="mt-5 rounded-xl border border-sky-400/25 bg-sky-500/10 px-4 py-3.5 text-sm leading-relaxed text-sky-100 sm:text-base">
                 {copy.weeklyReminder}
-              </p>
+              </div>
             </div>
           </GlassPanel>
         </AnimateIn>
