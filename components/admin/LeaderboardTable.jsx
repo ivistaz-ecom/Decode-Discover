@@ -103,6 +103,7 @@ export function LeaderboardTable({ entries, mode = "weekly", searchQuery = "" })
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
     { key: "score", label: "Score" },
+    { key: "wordsFound", label: "Words" },
     { key: "completionTime", label: "Time" },
     { key: "popupOpenCount", label: "Hints" },
     { key: "totalImageViewTime", label: "Image Time" },
@@ -185,6 +186,11 @@ export function LeaderboardTable({ entries, mode = "weekly", searchQuery = "" })
                     </>
                   ) : (
                     <>
+                      <td className="px-4 py-3.5 tabular-nums text-slate-200">
+                        {entry.totalWords > 0
+                          ? `${entry.wordsFound ?? 0} / ${entry.totalWords}`
+                          : (entry.wordsFound ?? 0)}
+                      </td>
                       <td className="px-4 py-3.5 tabular-nums">{formatMs(entry.completionTime)}</td>
                       <td className="px-4 py-3.5">{entry.popupOpenCount}</td>
                       <td className="px-4 py-3.5 tabular-nums">{formatMs(entry.totalImageViewTime)}</td>
