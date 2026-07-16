@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { IncompletePlayersTable } from "@/components/admin/IncompletePlayersTable";
 import { LeaderboardTable } from "@/components/admin/LeaderboardTable";
 import { AppShell } from "@/components/layout/AppShell";
 import { GlassPanel } from "@/components/layout/GlassPanel";
@@ -94,6 +95,7 @@ export function AdminDashboard() {
 
   const activeEntries =
     viewMode === "overall" ? leaderboard.overall : (selectedWeekData?.entries ?? []);
+  const incompleteEntries = selectedWeekData?.incompleteEntries ?? [];
 
   const stats = useMemo(() => {
     const scores = activeEntries.map((entry) =>
@@ -104,9 +106,10 @@ export function AdminDashboard() {
     const avgScore = scores.length
       ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
       : 0;
+    const incompletePlayers = viewMode === "weekly" ? incompleteEntries.length : 0;
 
-    return { totalPlayers, topScore, avgScore };
-  }, [activeEntries, viewMode]);
+    return { totalPlayers, topScore, avgScore, incompletePlayers };
+  }, [activeEntries, incompleteEntries.length, viewMode]);
 
   const subtitle =
     viewMode === "overall"
@@ -166,10 +169,17 @@ export function AdminDashboard() {
           </div>
         )}
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
-          <StatCard label="Players" value={stats.totalPlayers} hint="In current view" />
+        <div className={`mb-5 grid gap-3 ${viewMode === "weekly" ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+          <StatCard label="Submitted" value={stats.totalPlayers} hint="Completed this view" />
           <StatCard label="Top score" value={stats.topScore} hint="Highest in this list" />
-          <StatCard label="Average score" value={stats.avgScore} hint="Across visible players" />
+          <StatCard label="Average score" value={stats.avgScore} hint="Across submitted players" />
+          {viewMode === "weekly" ? (
+            <StatCard
+              label="Not submitted"
+              value={stats.incompletePlayers}
+              hint="Logged in, no submit"
+            />
+          ) : null}
         </div>
 
         <GlassPanel className="p-4 sm:p-6">
@@ -214,6 +224,9 @@ export function AdminDashboard() {
                   {week.label}
                   <span className="ml-2 rounded-full bg-black/20 px-2 py-0.5 text-[10px]">
                     {week.entries.length}
+                    {(week.incompleteEntries?.length ?? 0) > 0
+                      ? ` · ${week.incompleteEntries.length} open`
+                      : ""}
                   </span>
                 </button>
               ))}
@@ -227,6 +240,24 @@ export function AdminDashboard() {
               searchQuery={searchQuery}
             />
           </AnimateIn>
+
+          {viewMode === "weekly" ? (
+            <div className="mt-8 border-t border-white/10 pt-6">
+              <div className="mb-4">
+                <h2 className="font-display text-lg font-semibold text-slate-100">
+                  Logged in, not submitted
+                </h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Players who started {selectedWeekData?.label ?? `Week ${selectedWeek}`} but
+                  never hit Submit — progress is still saved.
+                </p>
+              </div>
+              <IncompletePlayersTable
+                entries={incompleteEntries}
+                searchQuery={searchQuery}
+              />
+            </div>
+          ) : null}
         </GlassPanel>
       </main>
     </AppShell>

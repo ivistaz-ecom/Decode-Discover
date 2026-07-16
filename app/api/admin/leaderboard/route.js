@@ -15,14 +15,10 @@ export async function GET(request) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
-    const snap = await getAdminDb()
-      .collection("game_sessions")
-      .where("score", "!=", null)
-      .get();
-
-    const completedSessions = snap.docs.map((docSnap) => docSnap.data());
-    const allUids = new Set(completedSessions.map((session) => session.uid));
     const db = getAdminDb();
+    const snap = await db.collection("game_sessions").get();
+    const sessions = snap.docs.map((docSnap) => docSnap.data());
+    const allUids = new Set(sessions.map((session) => session.uid).filter(Boolean));
     const userCache = new Map();
 
     await Promise.all(
@@ -36,9 +32,7 @@ export async function GET(request) {
       })
     );
 
-    const data = buildLeaderboardData(completedSessions, (uid) =>
-      userCache.get(uid)
-    );
+    const data = buildLeaderboardData(sessions, (uid) => userCache.get(uid));
 
     return NextResponse.json(data);
   } catch (error) {
